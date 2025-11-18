@@ -23,14 +23,16 @@ dependencies:
     - mlflow
     - boto3
     - python-dotenv
-    - pillow
     - opencv-python-headless
-    - faiss-cpu
+    
 
     # Combination
     # if Train in Macos
     # - tensorflow-macos==2.15.0
-    - tensorflow==2.15.0
+    # - pillow 
+    - tensorflow<2.16
+    - pillow>=11.0.0
+    - faiss-cpu
     - tf_keras
     - flatbuffers
     - protobuf==3.20.3     
