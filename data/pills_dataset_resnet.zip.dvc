@@ -1,0 +1,5 @@
+outs:
+- md5: afc658f9360f9f008a3bda6ecf8fdf52
+  size: 147818896
+  hash: md5
+  path: pills_dataset_resnet.zip
