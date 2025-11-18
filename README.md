@@ -12,7 +12,11 @@ conda env update --file environment.yaml --prune
 dvc repro 
 
 # Push Command
+# Add Data
 dvc add --force data/pills_dataset_resnet.zip
+dvc add data/raw/pills_dataset_resnet/ 
+
+# Run Ci.yaml
 dvc status          
 dvc push           
 git add .          
