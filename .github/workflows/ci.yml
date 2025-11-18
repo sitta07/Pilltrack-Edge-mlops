@@ -18,7 +18,7 @@ jobs:
       - name: Checkout Repository Code
         uses: actions/checkout@v4
         with:
-          fetch-depth: 0  # ดึง history ทั้งหมดสำหรับ DVC
+          fetch-depth: 0
 
       - name: Setup DVC
         uses: iterative/setup-dvc@v1
@@ -72,35 +72,71 @@ jobs:
               dvc remote list || echo 'No DVC remotes configured'
               
               echo '=== Available DVC Files ==='
-              find . -name '*.dvc' -type f | head -10
+              find . -name '*.dvc' -type f
               
               echo '=== Data Directory Before DVC Pull ==='
-              ls -la data/ || echo 'data/ directory not found'
-              
-              echo '=== Pulling Data from DVC Remote ==='
-              dvc pull -v
-              
-              echo '=== Data Directory After DVC Pull ==='
               ls -la data/
+              
+              echo '=== Force Pulling Dataset ==='
+              # ลบ cache เก่าที่ทำให้ดึงเฉพาะโมเดล
+              dvc cache clear
+              
+              # Force pull dataset โดยเฉพาะ
+              dvc pull data/pills_dataset_resnet.zip.dvc -f
+              
+              echo '=== Checking Dataset After Force Pull ==='
               if [ -f 'data/pills_dataset_resnet.zip' ]; then
                 echo '✅ Dataset zip file found'
                 ls -lh data/pills_dataset_resnet.zip
+                
+                # ตรวจสอบว่าไฟล์ zip ไม่เสีย
+                echo '=== Validating Zip File ==='
+                if unzip -t data/pills_dataset_resnet.zip > /dev/null 2>&1; then
+                  echo '✅ Zip file is valid'
+                else
+                  echo '❌ Zip file is corrupted'
+                  exit 1
+                fi
               else
-                echo '❌ Dataset zip file missing!'
-                echo 'Files in data/:'
-                ls -la data/
+                echo '❌ Dataset still missing, checking DVC status...'
+                dvc status
+                echo '=== Debug: DVC Files Content ==='
+                cat data/pills_dataset_resnet.zip.dvc
                 exit 1
               fi
               
-              echo '=== Running DVC Pipeline ==='
+              # ลบโมเดลเก่าที่อาจดึงมาผิด
+              echo '=== Cleaning Old Models ==='
+              rm -rf models/*
+              
+              echo '=== Running Pipeline ==='
               dvc status
               dvc repro -v
               
               echo '=== Checking Pipeline Outputs ==='
               echo 'Models generated:'
-              ls -la models/ || echo 'models/ directory not found'
+              ls -la models/
               
-              echo '=== Pushing Results to DVC Remote ==='
+              # ตรวจสอบว่าโมเดลสำคัญถูกสร้าง
+              REQUIRED_MODELS=(
+                'models/best_student.pth'
+                'models/student_quant_int8.tflite' 
+                'models/pill_db.index'
+                'models/labels.json'
+                'models/model_metadata.json'
+              )
+              
+              for model in \"${REQUIRED_MODELS[@]}\"; do
+                if [ -f \"$model\" ]; then
+                  echo \"✅ $model generated successfully\"
+                  ls -lh \"$model\"
+                else
+                  echo \"❌ $model missing\"
+                  exit 1
+                fi
+              done
+              
+              echo '=== Pushing Results ==='
               dvc push -v
               
               echo '✅ Pipeline completed successfully!'
@@ -142,17 +178,17 @@ jobs:
           path: models/
           retention-days: 7
 
-      - name: Upload DVC Cache Debug
+      - name: Upload DVC Debug Info
         if: failure()
         uses: actions/upload-artifact@v4
         with:
-          name: dvc-debug
+          name: dvc-debug-info
           path: |
             .dvc/
             data/
           retention-days: 3
 
-  # Optional: Add a test job to validate the generated models
+  # Optional: Model validation job
   model_validation:
     runs-on: ubuntu-latest
     needs: run_full_mlops_pipeline
@@ -172,7 +208,6 @@ jobs:
         run: |
           echo "--- Validating Generated Models ---"
           
-          # Check if required model files exist
           REQUIRED_FILES=(
             "models/student_quant_int8.tflite"
             "models/best_student.pth" 
@@ -181,13 +216,19 @@ jobs:
             "models/model_metadata.json"
           )
           
+          ALL_PASSED=true
           for file in \"${REQUIRED_FILES[@]}\"; do
             if [ -f \"$file\" ]; then
-              echo \"✅ $file exists\"
-              ls -lh \"$file\"
+              echo \"✅ $file exists ($(stat -c%s \"$file\") bytes)\"
             else
               echo \"❌ $file missing\"
+              ALL_PASSED=false
             fi
           done
           
-          echo "--- Model Validation Complete ---"
+          if [ \"$ALL_PASSED\" = true ]; then
+            echo \"🎉 All models validated successfully!\"
+          else
+            echo \"💥 Some models are missing\"
+            exit 1
+          fi

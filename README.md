@@ -22,3 +22,9 @@ dvc push
 git add .          
 git commit -m "Add trained models and data"
 git push          
+
+## need to set up in action variable first
+AWS_ACCESS_KEY_ID
+MLFLOW_TRACKING_URI
+AWS_SECRET_ACCESS_KEY
+AWS_ACCESS_KEY_ID
