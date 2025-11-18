@@ -23,7 +23,7 @@ jobs:
       - name: Build MLOps Environment Container
         # Dockerfile ที่เราสร้างจะถูก Build เพื่อสร้าง Environment 'pilltrack-ci-runner'
         run: |
-          docker build -t $IMAGE_NAME .
+          docker build -t $IMAGE_NAME -f DockerFile .
 
       # 2. Run the Pipeline INSIDE the Container
       - name: Run DVC Repro Pipeline
