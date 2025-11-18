@@ -1,0 +1,44 @@
+name: pilltrack-conda
+channels:
+  - conda-forge
+  - apple
+dependencies:
+  - python=3.10
+  - pip
+  - dvc
+  - dvc-s3 
+  
+  # Core
+  - numpy=1.26
+  - pandas
+  - pyyaml
+  - tqdm
+
+  # PyTorch
+  - pytorch
+  - torchvision
+
+  # PIP
+  - pip:
+    - mlflow
+    - boto3
+    - python-dotenv
+    - pillow
+    - opencv-python-headless
+    - faiss-cpu
+
+    # Combination
+    - tensorflow-macos==2.15.0
+    - tf_keras
+    - flatbuffers
+    - protobuf==3.20.3     
+    
+    - ml_dtypes==0.3.1    
+    
+    - onnx==1.16.1         
+    - onnxscript          
+    
+    - onnx2tf==1.17.5
+    - onnx-graphsurgeon
+    - sng4onnx
+    - simple-onnx-processing-tools==1.0.29

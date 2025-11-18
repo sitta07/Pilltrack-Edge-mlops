@@ -1,0 +1,14 @@
+artifact_uri: file:///Users/sittasahathum/Desktop/pilltrack-edge-mlops/mlruns/897778561463971797/ddad733e42df4363a9124fc806ee1151/artifacts
+end_time: 1763455772017
+entry_point_name: ''
+experiment_id: '897778561463971797'
+lifecycle_stage: active
+run_id: ddad733e42df4363a9124fc806ee1151
+run_name: Model_Conversion
+source_name: ''
+source_type: 4
+source_version: ''
+start_time: 1763455743995
+status: 3
+tags: []
+user_id: sittasahathum

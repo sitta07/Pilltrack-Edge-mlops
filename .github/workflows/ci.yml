@@ -1,0 +1,61 @@
+name: MLOps Production Pipeline (Train, Convert, Deploy)
+
+on:
+  push:
+    branches: [main] # รันเมื่อมีการ Push ไปที่ Branch main
+  pull_request:
+    branches: [main] # รันเมื่อมีการสร้าง Pull Request
+
+jobs:
+  run_full_mlops_pipeline:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45 # กำหนด Timeout 45 นาที
+    
+    # กำหนดตัวแปร Environment ที่จำเป็นทั้งหมด
+    env:
+      IMAGE_NAME: pilltrack-ci-runner
+      
+    steps:
+      - name: Checkout Repository Code
+        uses: actions/checkout@v4
+
+      # 1. Build the Docker Image
+      - name: Build MLOps Environment Container
+        # Dockerfile ที่เราสร้างจะถูก Build เพื่อสร้าง Environment 'pilltrack-ci-runner'
+        run: |
+          docker build -t $IMAGE_NAME .
+
+      # 2. Run the Pipeline INSIDE the Container
+      - name: Run DVC Repro Pipeline
+        shell: bash
+        env:
+          # Inject all required secrets/env vars into the runner's environment (for 'docker run' to access)
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          MLFLOW_TRACKING_URI: ${{ secrets.MLFLOW_TRACKING_URI }}
+          S3_BUCKET_NAME: ${{ secrets.S3_BUCKET_NAME }}
+          AWS_DEFAULT_REGION: ap-southeast-1 
+        run: |
+          echo "--- Starting Pipeline Execution inside Docker ---"
+          # ใช้ 'docker run' เพื่อรันคำสั่ง pipeline ภายใน Container ที่เพิ่ง Build
+          # -v ${{ github.workspace }}:/app : Mount โฟลเดอร์ปัจจุบันของ GitHub Actions เข้าไปใน Container
+          # -e [VAR] : ส่ง Environment Variable ที่มี Secret เข้าไปใน Container
+          docker run --rm \
+            -v ${{ github.workspace }}:/app \
+            -e AWS_ACCESS_KEY_ID \
+            -e AWS_SECRET_ACCESS_KEY \
+            -e MLFLOW_TRACKING_URI \
+            -e S3_BUCKET_NAME \
+            -e AWS_DEFAULT_REGION \
+            $IMAGE_NAME \
+            /bin/bash -c "dvc pull && dvc repro" 
+          echo "--- Pipeline Finished. Checking Upload Status ---"
+
+      # 3. Report Results and Upload Artifacts (สำหรับ Debug และเก็บ Log)
+      - name: Upload MLflow Logs Artifact
+        # รันเสมอ แม้ว่า dvc repro จะ Fail (เพื่อเอา log มาดูสาเหตุ)
+        if: always()
+        uses: actions/upload-artifact@v3
+        with:
+          name: mlflow-logs
+          path: mlruns/

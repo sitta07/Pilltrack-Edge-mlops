@@ -1,0 +1,79 @@
+schema: '2.0'
+stages:
+  train:
+    cmd: python src/training/train.py
+    deps:
+    - path: data/pills_dataset_resnet.zip
+      hash: md5
+      md5: afc658f9360f9f008a3bda6ecf8fdf52
+      size: 147818896
+    - path: src/training/train.py
+      hash: md5
+      md5: 3797fc188f7d8b2d94d282273308272a
+      size: 11877
+    params:
+      params.yaml:
+        data.extract_path: data/raw
+        model.num_classes: 46
+        train.alpha: 0.2078451089181085
+        train.batch_size: 32
+        train.epochs: 2
+        train.lr: 0.0003682779964048965
+        train.temperature: 5.971135416355251
+    outs:
+    - path: models/best_student.pth
+      hash: md5
+      md5: 67095d169471a61a5af0e754cb781ed7
+      size: 9373003
+  convert:
+    cmd: python src/conversion/convert.py
+    deps:
+    - path: models/best_student.pth
+      hash: md5
+      md5: 67095d169471a61a5af0e754cb781ed7
+      size: 9373003
+    - path: src/conversion/convert.py
+      hash: md5
+      md5: c5f2e662b8463aa3a0471918c8ab79ce
+      size: 9663
+    params:
+      params.yaml:
+        data.extract_path: data/raw
+        evaluation.min_accuracy: 85.0
+    outs:
+    - path: models/student_quant_int8.tflite
+      hash: md5
+      md5: dd6375e6a406b2ef4478e3e360d79f59
+      size: 2770392
+  enroll:
+    cmd: python src/enrollment/enroll.py
+    deps:
+    - path: data/raw
+      hash: md5
+      md5: 11c5403b1115537d4057beda131b8b1d.dir
+      size: 154042082
+      nfiles: 9788
+    - path: models/student_quant_int8.tflite
+      hash: md5
+      md5: dd6375e6a406b2ef4478e3e360d79f59
+      size: 2770392
+    - path: src/enrollment/enroll.py
+      hash: md5
+      md5: dd3874c3556f48428195d99d283ffd5c
+      size: 6853
+    params:
+      params.yaml:
+        enrollment.s3_prefix: production/edge-models/v1/
+    outs:
+    - path: models/labels.json
+      hash: md5
+      md5: 2d431afa2ec2451df8af92f6c0d1b9b2
+      size: 28682
+    - path: models/model_metadata.json
+      hash: md5
+      md5: 193f5c5a59300ef7d07da08dedbd5cc5
+      size: 304
+    - path: models/pill_db.index
+      hash: md5
+      md5: 4c56dfae5acbac23ecc7e969124d7ff9
+      size: 253965

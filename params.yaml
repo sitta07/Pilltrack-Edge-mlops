@@ -1,0 +1,35 @@
+base:
+  project: pilltrack-edge
+  seed: 42
+
+data:
+  # ถ้าแตกไฟล์ zip แล้วให้แก้ path ตรงนี้ให้ชี้ไปที่ folder รูป
+  source_zip: data/pills_dataset_resnet.zip
+  extract_path: data/raw
+  img_size: 224
+  num_workers: 2
+
+model:
+  teacher_arch: "resnet50"
+  teacher_s3_key: "production/kd-model/v1/trained_teacher_resnet50.pth" 
+  student_arch: "mobilenet_v2"
+  num_classes: 46
+
+train:
+# Best Parameter from Optuna Tuning
+  batch_size: 32
+  epochs: 2
+  lr: 0.0003682779964048965
+  temperature: 5.971135416355251 
+  alpha: 0.2078451089181085      
+
+evaluation:
+  min_accuracy: 85.0
+
+  # params.yaml (เพิ่มต่อท้าย)
+
+enrollment:
+  index_file: "models/pill_db.index"
+  labels_file: "models/labels.json"
+  metadata_file: "models/model_metadata.json"
+  s3_prefix: "production/edge-models/v1/"

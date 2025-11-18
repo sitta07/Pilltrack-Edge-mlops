@@ -1,0 +1,46 @@
+stages:
+  # --- STAGE 1: TRAINING (สร้างสมองนักเรียน) ---
+  train:
+    cmd: python src/training/train.py
+    deps:
+      - data/pills_dataset_resnet.zip
+      - src/training/train.py
+    params:
+      - params.yaml:
+        - train.epochs
+        - train.lr
+        - train.batch_size
+        - train.temperature
+        - train.alpha
+        - model.num_classes
+        - data.extract_path
+    outs:
+      - models/best_student.pth  # Output: PyTorch Weights
+
+  # --- STAGE 2: CONVERSION & QC (บีบอัดและตรวจสอบคุณภาพ) ---
+  convert:
+    cmd: python src/conversion/convert.py
+    deps:
+      - models/best_student.pth  # Input: จาก Stage train
+      - src/conversion/convert.py
+    params:
+      - params.yaml:
+        - evaluation.min_accuracy  # Gatekeeper Threshold
+        - data.extract_path        # เพื่อใช้โหลดรูปสำหรับ Evaluation
+    outs:
+      - models/student_quant_int8.tflite # Output: TFLite Model (Int8)
+
+  # --- STAGE 3: ENROLLMENT & DEPLOYMENT (สร้างความทรงจำและอัปโหลด) ---
+  enroll:
+    cmd: python src/enrollment/enroll.py
+    deps:
+      - models/student_quant_int8.tflite # Input: จาก Stage convert
+      - src/enrollment/enroll.py
+      - data/raw                         # Input: ข้อมูลรูปภาพสำหรับสร้าง Index
+    params:
+      - params.yaml:
+        - enrollment.s3_prefix
+    outs:
+      - models/pill_db.index             # Output: ฐานข้อมูล FAISS
+      - models/labels.json               # Output: Map ID -> ชื่อยา
+      - models/model_metadata.json       # Output: Checksum Metadata

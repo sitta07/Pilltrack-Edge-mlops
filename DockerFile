@@ -1,0 +1,31 @@
+FROM mambaorg/micromamba:1.5.8 AS builder
+
+# 2. Set Metadata
+LABEL maintainer="PillTrackEdge MLOps Team"
+LABEL version="1.0"
+
+# 3. Set Environment Variables
+# ตั้งค่า Locale เพื่อความเสถียรของ Python
+ENV LANG=C.UTF-8 LC_ALL=C.UTF-8
+
+ENV OMP_NUM_THREADS=1 KMP_DUPLICATE_LIB_OK=TRUE TF_ENABLE_ONEDNN_OPTS=0
+
+# 4. สร้าง Conda Environment ตาม environment.yaml
+
+COPY environment.yaml /tmp/environment.yaml
+RUN micromamba create -f /tmp/environment.yaml -n pilltrack-ci
+
+# 5. ตั้งค่า PATH และ Working Directory
+
+ENV PATH="/opt/conda/envs/pilltrack-ci/bin:$PATH"
+WORKDIR /app
+
+# 6. Copy Source Code (Codebase ทั้งหมด)
+COPY . /app
+
+# 7. ตั้งค่า Shell ที่ใช้รันคำสั่ง (Entrypoint)
+# คำสั่งนี้จะบังคับให้ทุกคำสั่งที่รันต่อจากนี้ (ใน CI) เข้าสู่ Conda Env ที่ถูกต้องเสมอ
+SHELL ["micromamba", "run", "-n", "pilltrack-ci", "/bin/bash", "-c"]
+
+# 8. คำสั่งเริ่มต้น (CI จะ Override ด้วย dvc repro)
+# CMD ["echo", "Ready to run dvc repro..."]
