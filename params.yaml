@@ -3,7 +3,6 @@ base:
   seed: 42
 
 data:
-  # ถ้าแตกไฟล์ zip แล้วให้แก้ path ตรงนี้ให้ชี้ไปที่ folder รูป
   source_zip: data/pills_dataset_resnet.zip
   extract_path: data/raw
   img_size: 224
@@ -25,8 +24,6 @@ train:
 
 evaluation:
   min_accuracy: 85.0
-
-  # params.yaml (เพิ่มต่อท้าย)
 
 enrollment:
   index_file: "models/pill_db.index"

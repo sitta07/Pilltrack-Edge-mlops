@@ -30,6 +30,7 @@ dependencies:
     # if Train in Macos
     # - tensorflow-macos==2.15.0
     # - pillow 
+    
     - tensorflow<2.16
     - pillow>=11.0.0
     - faiss-cpu
