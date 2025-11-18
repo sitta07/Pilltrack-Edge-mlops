@@ -5,11 +5,16 @@ End-to-end MLOps pipeline for real-time pill identification on Edge devices usin
 conda env create -f environment.yaml
 conda activate pilltrack-conda
 
-# update
+# update (Please uncomment setup in environment.yaml if you use macOS )
 conda env update --file environment.yaml --prune
 
-# export Close OpenMP
-export KMP_DUPLICATE_LIB_OK=TRUE
-export OMP_NUM_THREADS=1
+# Train Model 
+dvc repro 
 
-export CUDA_VISIBLE_DEVICES=""
+# Push Command
+dvc add --force data/pills_dataset_resnet.zip
+dvc status          
+dvc push           
+git add .          
+git commit -m "Add trained models and data"
+git push          

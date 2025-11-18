@@ -2,55 +2,67 @@ name: MLOps Production Pipeline (Train, Convert, Deploy)
 
 on:
   push:
-    branches: [main] # รันเมื่อมีการ Push ไปที่ Branch main
+    branches: [main]
   pull_request:
-    branches: [main] # รันเมื่อมีการสร้าง Pull Request
+    branches: [main]
 
 jobs:
   run_full_mlops_pipeline:
     runs-on: ubuntu-latest
-    timeout-minutes: 45 # กำหนด Timeout 45 นาที
+    timeout-minutes: 45
     
-    # กำหนดตัวแปร Environment ที่จำเป็นทั้งหมด
     env:
       IMAGE_NAME: pilltrack-ci-runner
       
     steps:
       - name: Checkout Repository Code
         uses: actions/checkout@v4
+        with:
+          # ดึง .dvc files ด้วย
+          fetch-depth: 0
 
-      # 1. Build the Docker Image
+      - name: Setup DVC
+        uses: iterative/setup-dvc@v1
+
       - name: Build MLOps Environment Container
-        # Dockerfile ที่เราสร้างจะถูก Build เพื่อสร้าง Environment 'pilltrack-ci-runner'
         run: |
           docker build -t $IMAGE_NAME -f DockerFile .
 
-      # 2. Run the Pipeline INSIDE the Container
       - name: Run DVC Repro Pipeline
         shell: bash
         env:
-          # Inject all required secrets/env vars into the runner's environment (for 'docker run' to access)
           AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           MLFLOW_TRACKING_URI: ${{ secrets.MLFLOW_TRACKING_URI }}
           S3_BUCKET_NAME: ${{ secrets.S3_BUCKET_NAME }}
           AWS_DEFAULT_REGION: ap-southeast-1 
         run: |
-            echo "--- Starting Pipeline Execution inside Docker ---"
-            docker run --rm \
-                -v ${{ github.workspace }}:/app \
-                -e AWS_ACCESS_KEY_ID \
-                -e AWS_SECRET_ACCESS_KEY \
-                -e MLFLOW_TRACKING_URI \
-                -e S3_BUCKET_NAME \
-                -e AWS_DEFAULT_REGION \
-                --user $(id -u):$(id -g) \
-                $IMAGE_NAME \
-                /bin/bash -c "dvc pull && dvc repro"
-            echo "--- Pipeline Finished. Checking Upload Status ---"
-      # 3. Report Results and Upload Artifacts (สำหรับ Debug และเก็บ Log)
+          echo "--- Starting Pipeline Execution inside Docker ---"
+          docker run --rm \
+            -v ${{ github.workspace }}:/app \
+            -e AWS_ACCESS_KEY_ID \
+            -e AWS_SECRET_ACCESS_KEY \
+            -e MLFLOW_TRACKING_URI \
+            -e S3_BUCKET_NAME \
+            -e AWS_DEFAULT_REGION \
+            --user $(id -u):$(id -g) \
+            $IMAGE_NAME \
+            /bin/bash -c "
+              # สร้างโฟลเดอร์ data/raw/ ก่อน (ถ้ายังไม่มี)
+              mkdir -p data/raw/
+              
+              # ดึงข้อมูลจาก DVC remote
+              dvc pull data/raw/pills_dataset_resnet.dvc || echo 'Pulling dataset...'
+              
+              # รัน pipeline
+              dvc repro
+              
+              # Push ผลลัพธ์ใหม่กลับไปยัง remote (ถ้ามี)
+              dvc push
+            "
+          echo "--- Pipeline Finished. Checking Upload Status ---"
+
       - name: Upload MLflow Logs Artifact
-        # รันเสมอ แม้ว่า dvc repro จะ Fail (เพื่อเอา log มาดูสาเหตุ)
         if: always()
         uses: actions/upload-artifact@v4
         with:
