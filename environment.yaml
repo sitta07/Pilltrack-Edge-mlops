@@ -28,7 +28,9 @@ dependencies:
     - faiss-cpu
 
     # Combination
-    - tensorflow-macos==2.15.0
+    # if Train in Macos
+    # - tensorflow-macos==2.15.0
+    - tensorflow==2.15.0
     - tf_keras
     - flatbuffers
     - protobuf==3.20.3     
