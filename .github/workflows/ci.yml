@@ -69,7 +69,7 @@ jobs:
               
               echo '=== Checking DVC Configuration ==='
               dvc version
-              dvc remote list || echo 'No DVC remotes configured'
+              dvc remote list
               
               echo '=== Available DVC Files ==='
               find . -name '*.dvc' -type f
@@ -78,8 +78,8 @@ jobs:
               ls -la data/
               
               echo '=== Force Pulling Dataset ==='
-              # ลบ cache เก่าที่ทำให้ดึงเฉพาะโมเดล
-              dvc cache clear
+              # ใช้วิธีลบ cache directory แทน dvc cache clear
+              rm -rf .dvc/cache
               
               # Force pull dataset โดยเฉพาะ
               dvc pull data/pills_dataset_resnet.zip.dvc -f
@@ -102,6 +102,8 @@ jobs:
                 dvc status
                 echo '=== Debug: DVC Files Content ==='
                 cat data/pills_dataset_resnet.zip.dvc
+                echo '=== Debug: DVC Lock File ==='
+                cat dvc.lock | grep -A 5 -B 5 pills_dataset || echo 'Not found in lock file'
                 exit 1
               fi
               
@@ -186,6 +188,8 @@ jobs:
           path: |
             .dvc/
             data/
+            dvc.lock
+            dvc.yaml
           retention-days: 3
 
   # Optional: Model validation job
