@@ -208,3 +208,5 @@ __marimo__/
 .env 
 /models/*
 /data/*
+check-ignore data/pills_dataset_resnet.zip.dvc
+.dvc
