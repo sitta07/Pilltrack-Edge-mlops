@@ -11,7 +11,6 @@ from tqdm import tqdm
 from PIL import Image
 from dotenv import load_dotenv 
 
-# เพิ่ม path ให้ Python มองเห็น module src (ถ้ามี)
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../..')))
 
 load_dotenv()
@@ -59,12 +58,10 @@ def main():
     
     # --- Configs ---
     DATA_DIR = params['data']['extract_path']
-    # NOTE: เราอาจจะยังไม่ต้องใช้ MODEL_PATH ที่นี่ก็ได้ ถ้า Stage Convert/Train สร้างไฟล์แล้ว
     MODEL_PATH = "models/student_quant_int8.tflite" 
     
     INDEX_OUT = params['enrollment']['index_file']
     LABELS_OUT = params['enrollment']['labels_file']
-    # META_OUT และ S3_PREFIX ถูกตัดออกไปแล้ว
     
     if not os.path.exists(MODEL_PATH):
         print(f"❌ ไม่พบไฟล์โมเดล {MODEL_PATH} กรุณารัน dvc repro convert ก่อน")
@@ -115,7 +112,6 @@ def main():
         index = faiss.IndexFlatL2(d)
         index.add(embeddings_matrix)
         
-        # 💡 สร้างโฟลเดอร์ models/ ถ้ายังไม่มี
         os.makedirs(os.path.dirname(INDEX_OUT), exist_ok=True) 
         faiss.write_index(index, INDEX_OUT)
         
@@ -123,7 +119,7 @@ def main():
             
         print(f"✅ Indexing Complete. Index saved to {INDEX_OUT}")
         
-        # 💡 DVC Metrics: เราอาจจะบันทึกจำนวน Vector ที่ใช้ Indexing ไว้ใน DVC metrics
+        # DVC Metrics: เราอาจจะบันทึกจำนวน Vector ที่ใช้ Indexing ไว้ใน DVC metrics
         with open("dvc_metrics.json", "w") as f:
              json.dump({"indexed_vectors": len(embeddings)}, f)
         print("✅ DVC metrics updated.")

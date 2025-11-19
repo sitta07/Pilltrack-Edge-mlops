@@ -158,7 +158,6 @@ def main(args):
             success = download_from_s3(MODEL_CFG['teacher_s3_key'], teacher_local_path)
             if not success:
                 print("❌ Failed to download Teacher. Cannot proceed with KD training.")
-                # ใน Production ควร exit(1) แต่ถ้าเทส Local อาจจะยอมให้รันไปก่อนเพื่อเทสระบบ
                 # sys.exit(1) 
         else:
             print("⚠️ No S3 key defined for Teacher.")

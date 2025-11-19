@@ -10,11 +10,7 @@ def load_params(param_path="params.yaml"):
 def main():
     params = load_params()
     
-    # อ่าน Path จาก params.yaml
-    # สมมติใน params คุณเขียนว่า:
-    # data:
-    #   zip_path: "data/pills_dataset_resnet.zip"
-    #   extract_path: "data/raw" 
+    
     
     zip_path = "data/pills_dataset_resnet.zip" # หรืออ่านจาก params
     extract_to = "data/raw" # หรืออ่านจาก params
