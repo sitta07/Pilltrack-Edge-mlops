@@ -6,7 +6,7 @@ stages:
       - data/pills_dataset_resnet.zip
     outs:
       - data/raw:
-          cache: false  # 👈 เพิ่มบรรทัดนี้! บอก DVC ว่าไม่ต้องยุ่งกับ S3 สำหรับโฟลเดอร์นี้
+          cache: false  
   train:
     cmd: python src/training/train.py
     deps:

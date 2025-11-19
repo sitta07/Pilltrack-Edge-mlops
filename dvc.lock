@@ -9,8 +9,8 @@ stages:
       size: 147818896
     - path: src/training/train.py
       hash: md5
-      md5: 3797fc188f7d8b2d94d282273308272a
-      size: 11877
+      md5: 36b55fc04715ee46970958259faf81b0
+      size: 11692
     params:
       params.yaml:
         data.extract_path: data/raw
@@ -23,19 +23,19 @@ stages:
     outs:
     - path: models/best_student.pth
       hash: md5
-      md5: 8b7411f882239de29937be4b1f261bea
+      md5: 0a73b0852aec4ed6c99ab7769e0cc30e
       size: 9373003
   convert:
     cmd: python src/conversion/convert.py
     deps:
     - path: models/best_student.pth
       hash: md5
-      md5: 8b7411f882239de29937be4b1f261bea
+      md5: 0a73b0852aec4ed6c99ab7769e0cc30e
       size: 9373003
     - path: src/conversion/convert.py
       hash: md5
-      md5: c5f2e662b8463aa3a0471918c8ab79ce
-      size: 9663
+      md5: 84e477943c537162f8c0bc8fbde64d6c
+      size: 9492
     params:
       params.yaml:
         data.extract_path: data/raw
@@ -43,7 +43,7 @@ stages:
     outs:
     - path: models/student_quant_int8.tflite
       hash: md5
-      md5: e64ae75a8966ce99d96faa9f73935fd4
+      md5: 42af364b81301d497ef4cd1254fb446e
       size: 2770392
   enroll:
     cmd: python src/enrollment/enroll.py
@@ -55,12 +55,12 @@ stages:
       nfiles: 19718
     - path: models/student_quant_int8.tflite
       hash: md5
-      md5: e64ae75a8966ce99d96faa9f73935fd4
+      md5: 42af364b81301d497ef4cd1254fb446e
       size: 2770392
     - path: src/enrollment/enroll.py
       hash: md5
-      md5: fa83fefeec3451124211afb856ae3d84
-      size: 5363
+      md5: 4cb4330ad3bf7a8aebe0e5876d8dfbad
+      size: 4898
     params:
       params.yaml:
         enrollment.s3_prefix: production/edge-models/v1/
@@ -71,7 +71,7 @@ stages:
       size: 28682
     - path: models/pill_db.index
       hash: md5
-      md5: c95706bfbd1e888b15f397026796dbe0
+      md5: 573aff2d307de5bb7257391030bb44bf
       size: 253965
   validate:
     cmd: python src/validate.py
@@ -107,8 +107,8 @@ stages:
       size: 147818896
     - path: src/prepare.py
       hash: md5
-      md5: 673ef739126a64b910df50e43c5649eb
-      size: 1117
+      md5: c91d9e12265d12392a7e3ee83e23913e
+      size: 910
     outs:
     - path: data/raw
       hash: md5
