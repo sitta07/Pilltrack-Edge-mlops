@@ -28,8 +28,7 @@ jobs:
         with:
           python-version: '3.10'
       - run: |
-          # ติดตั้ง DVC และ Boto3 (S3 lib) บน Host เพื่อใช้ Pull Data
-          pip install dvc boto3
+          pip install "dvc[s3]"
 
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v4
