@@ -2,10 +2,13 @@ name: MLOps Production Pipeline
 
 on:
   push:
-    branches: [main]
-  pull_request:
-    branches: [main]
+    branches:
+      - main                
+      - 'feature/**'        
 
+  pull_request:
+    branches:
+      - main
 jobs:
   run_mlops_pipeline:
     runs-on: ubuntu-latest
