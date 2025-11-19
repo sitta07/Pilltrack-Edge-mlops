@@ -13,24 +13,24 @@ jobs:
     
     env:
       IMAGE_NAME: pilltrack-ci-runner
-
+      
     steps:
+      # -----------------------------------------------------------
+      # 1. SETUP & DATA PREPARATION (Run on Host for Stability)
+      # -----------------------------------------------------------
       - name: Checkout Code
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
-      # 1. Setup Python and DVC (Run on Host - Safer)
-      - name: Setup Python and DVC
+      - name: Setup Python and DVC (Host)
         uses: actions/setup-python@v4
         with:
           python-version: '3.10'
-      - run: |
-          # 🔥 FIX: ใช้ boto3 โดยตรง ลดปัญหา pip error
-          pip install dvc[s3]
-          
+        run: |
+          # ติดตั้ง DVC และ Boto3 (S3 lib) บน Host เพื่อใช้ Pull Data
+          pip install dvc boto3
 
-      # 2. Configure AWS Credentials
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
@@ -38,45 +38,49 @@ jobs:
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ap-southeast-1
 
-      # 3. Pull Data on Host (New Strategy!) 🌟
-      - name: Check & Pull Data from DVC
+      - name: Check & Pull Data (Host)
         run: |
-          echo "--- Checking Remote Data Status ---"
-          # เช็กก่อนว่าไฟล์ .zip มีบน S3 ไหม
+          echo "--- 📡 Checking Remote Data Status ---"
+          # ตรวจสอบว่าไฟล์ .zip มีอยู่จริงบน S3 หรือไม่
           dvc status data/pills_dataset_resnet.zip.dvc -c
           
-          echo "--- Pulling Data to Host Workspace ---"
+          echo "--- 📥 Pulling Data to Host Workspace ---"
           dvc pull
           
-          echo "--- Verifying File ---"
+          echo "--- ✅ Verifying Downloaded Data ---"
           if [ -f "data/pills_dataset_resnet.zip" ]; then
-            echo "✅ Success! Found zip file: $(ls -lh data/pills_dataset_resnet.zip)"
+            echo "Dataset found: $(ls -lh data/pills_dataset_resnet.zip)"
           else
-            echo "❌ Error: Zip file not found after pull!"
+            echo "❌ Error: Dataset zip file missing after pull!"
             exit 1
           fi
 
-      # 4. Build Docker Image
+      # -----------------------------------------------------------
+      # 2. BUILD ENVIRONMENT
+      # -----------------------------------------------------------
       - name: Build Docker Image
         run: |
+          echo "--- 🐳 Building Docker Image ---"
           docker build -t $IMAGE_NAME -f DockerFile .
-          echo "✅ Docker image built"
 
-      # 5. Run MLOps Pipeline INSIDE Container
-      - name: Run MLOps Pipeline
+      # -----------------------------------------------------------
+      # 3. EXECUTE PIPELINE INSIDE DOCKER
+      #    (Build -> Validate -> Deploy)
+      # -----------------------------------------------------------
+      - name: Run MLOps Pipeline (Build, Validate, Deploy)
         env:
+          # ส่ง Secrets เข้าไปใน Container
           AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           MLFLOW_TRACKING_URI: ${{ secrets.MLFLOW_TRACKING_URI }}
           S3_BUCKET_NAME: ${{ secrets.S3_BUCKET_NAME }}
           AWS_DEFAULT_REGION: ap-southeast-1
         run: |
-          echo "--- Starting Production Pipeline in Docker ---"
+          echo "--- 🚀 Starting Production Pipeline in Docker ---"
           
-          # สร้างโฟลเดอร์ Output รอไว้
+          # สร้างโฟลเดอร์ Output รอไว้ (ป้องกัน Permission Error ตอน Mount)
           mkdir -p models mlruns
           
-          # รัน Docker (สังเกตว่าไม่ต้อง dvc pull ข้างในแล้ว เพราะเรา mount ไฟล์ที่เสร็จแล้วเข้าไป)
           docker run --rm \
             -v ${{ github.workspace }}:/app \
             -e AWS_ACCESS_KEY_ID \
@@ -87,55 +91,52 @@ jobs:
             --user $(id -u):$(id -g) \
             $IMAGE_NAME \
             /bin/bash -c "
-              set -e
+              set -e # ถ้ามี Error ให้หยุดทันที
               
-              echo '=== Double Check Data inside Docker ==='
-              ls -lh data/pills_dataset_resnet.zip
-              
-              echo '=== Running Pipeline (Repro) ==='
-              # dvc repro จะเห็นว่าไฟล์มาแล้ว และข้ามขั้นตอน pull ไปทำขั้นอื่นเลย
+              # --- PHASE 1: BUILD ARTIFACTS ---
+              # รัน dvc.yaml (Train -> Convert -> Enroll)
+              # จะได้ไฟล์ .tflite, .index, .json ออกมา
+              echo '========================================='
+              echo '🏗️  PHASE 1: Building Artifacts (DVC Repro)'
+              echo '========================================='
               dvc repro
               
-              echo '=== Validating Output Models ==='
-              REQUIRED_MODELS=(
-                'models/best_student.pth'
-                'models/student_quant_int8.tflite'
-                'models/pill_db.index'
-                'models/labels.json'
-                'models/model_metadata.json'
-              )
+              # --- PHASE 2: VALIDATION ---
+              # รัน script ตรวจสอบความถูกต้อง (ไม่อยู่ใน dvc.yaml)
+              # ถ้า Accuracy ต่ำกว่าเกณฑ์ Script จะ exit 1 และ Pipeline จะหยุดตรงนี้
+              echo '========================================='
+              echo '🔍  PHASE 2: Validating Performance'
+              echo '========================================='
+              python src/validate.py
               
-              for model in \"\${REQUIRED_MODELS[@]}\"; do
-                if [ -f \"\$model\" ]; then
-                  echo \"✅ \$model - generated\"
-                else
-                  echo \"❌ \$model - missing\"
-                  exit 1
-                fi
-              done
+              # --- PHASE 3: DEPLOYMENT ---
+              # รัน script อัปโหลดขึ้น S3 (รันเมื่อผ่าน Phase 2 เท่านั้น)
+              echo '========================================='
+              echo '🚀  PHASE 3: Deploying to S3'
+              echo '========================================='
+              python src/deploy.py
               
-              echo '=== Pushing Results ==='
-              dvc push
-              
-              echo '🎉 Pipeline Successfully Completed!'
+              echo '🎉🎉 MISSION COMPLETE! Pipeline Finished Successfully. 🎉🎉'
             "
 
-      # 6. Upload Artifacts
-      - name: Upload Pipeline Artifacts
-        if: always()
+      # -----------------------------------------------------------
+      # 4. POST-PROCESSING (Artifacts & Logs)
+      # -----------------------------------------------------------
+      - name: Upload Pipeline Artifacts (Logs & Models)
+        if: always() # เก็บ Log เสมอ แม้ Pipeline จะพัง
         uses: actions/upload-artifact@v4
         with:
-          name: ml-models-${{ github.run_id }}
+          name: ml-artifacts-${{ github.run_id }}
           path: |
-            models/
             mlruns/
+            models/
+            metrics.json
           retention-days: 30
 
-      # 7. Notify
       - name: Notify Success
         if: success()
-        run: echo "✅ MLOps Pipeline Completed Successfully"
+        run: echo "✅ MLOps Pipeline Deployed Successfully!"
 
       - name: Notify Failure
         if: failure()
-        run: echo "❌ Pipeline Failed - Check logs"
+        run: echo "❌ Pipeline Failed! Check the logs above."

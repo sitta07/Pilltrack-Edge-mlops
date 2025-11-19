@@ -23,14 +23,14 @@ stages:
     outs:
     - path: models/best_student.pth
       hash: md5
-      md5: 67095d169471a61a5af0e754cb781ed7
+      md5: 8b7411f882239de29937be4b1f261bea
       size: 9373003
   convert:
     cmd: python src/conversion/convert.py
     deps:
     - path: models/best_student.pth
       hash: md5
-      md5: 67095d169471a61a5af0e754cb781ed7
+      md5: 8b7411f882239de29937be4b1f261bea
       size: 9373003
     - path: src/conversion/convert.py
       hash: md5
@@ -43,7 +43,7 @@ stages:
     outs:
     - path: models/student_quant_int8.tflite
       hash: md5
-      md5: dd6375e6a406b2ef4478e3e360d79f59
+      md5: e64ae75a8966ce99d96faa9f73935fd4
       size: 2770392
   enroll:
     cmd: python src/enrollment/enroll.py
@@ -55,12 +55,12 @@ stages:
       nfiles: 9790
     - path: models/student_quant_int8.tflite
       hash: md5
-      md5: dd6375e6a406b2ef4478e3e360d79f59
+      md5: e64ae75a8966ce99d96faa9f73935fd4
       size: 2770392
     - path: src/enrollment/enroll.py
       hash: md5
-      md5: dd3874c3556f48428195d99d283ffd5c
-      size: 6853
+      md5: fa83fefeec3451124211afb856ae3d84
+      size: 5363
     params:
       params.yaml:
         enrollment.s3_prefix: production/edge-models/v1/
@@ -69,11 +69,32 @@ stages:
       hash: md5
       md5: 2d431afa2ec2451df8af92f6c0d1b9b2
       size: 28682
-    - path: models/model_metadata.json
-      hash: md5
-      md5: 193f5c5a59300ef7d07da08dedbd5cc5
-      size: 304
     - path: models/pill_db.index
       hash: md5
-      md5: 4c56dfae5acbac23ecc7e969124d7ff9
+      md5: c95706bfbd1e888b15f397026796dbe0
       size: 253965
+  validate:
+    cmd: python src/validate.py
+    deps:
+    - path: data/raw/pills_dataset_resnet/test
+      hash: md5
+      md5: f6d85b333af7f2f1b5815bb72f493563.dir
+      size: 23772179
+      nfiles: 1510
+    - path: models/pill_db.index
+      hash: md5
+      md5: c95706bfbd1e888b15f397026796dbe0
+      size: 253965
+    - path: models/student_quant_int8.tflite
+      hash: md5
+      md5: e64ae75a8966ce99d96faa9f73935fd4
+      size: 2770392
+    - path: src/validate.py
+      hash: md5
+      md5: 118d2fdc9cd2cc08c2bd97d63f9a03cc
+      size: 5132
+    outs:
+    - path: metrics.json
+      hash: md5
+      md5: a33e41c1dd341ba7ca1e9f18cec253cc
+      size: 38

@@ -43,4 +43,3 @@ stages:
     outs:
       - models/pill_db.index             # Output: ฐานข้อมูล FAISS
       - models/labels.json               # Output: Map ID -> ชื่อยา
-      - models/model_metadata.json       # Output: Checksum Metadata

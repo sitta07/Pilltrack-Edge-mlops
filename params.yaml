@@ -30,3 +30,8 @@ enrollment:
   labels_file: "models/labels.json"
   metadata_file: "models/model_metadata.json"
   s3_prefix: "production/edge-models/v1/"
+
+validation:
+  test_data_path: "data/raw/pills_dataset_resnet/test" 
+  accuracy_threshold: 0.90 
+  metric_file: "metrics.json"
