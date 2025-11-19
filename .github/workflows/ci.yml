@@ -27,7 +27,8 @@ jobs:
           python-version: '3.10'
       - run: |
           # 🔥 FIX: ใช้ boto3 โดยตรง ลดปัญหา pip error
-          pip install dvc boto3 
+          pip install dvc[s3]
+          
 
       # 2. Configure AWS Credentials
       - name: Configure AWS Credentials
