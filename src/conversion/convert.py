@@ -59,7 +59,6 @@ def convert_to_tflite(pth_path, output_dir, num_classes, data_dir):
     print("📉 Quantizing to TFLite (Int8) with REAL DATA...")
     
     try:
-        # Load SavedModel & Trace Signature manually (Fix "No signature" bug)
         loaded_model = tf.saved_model.load(tf_model_dir)
         concrete_func = None
         if list(loaded_model.signatures.keys()):
@@ -73,7 +72,6 @@ def convert_to_tflite(pth_path, output_dir, num_classes, data_dir):
 
         converter = tf.lite.TFLiteConverter.from_concrete_functions([concrete_func])
 
-        # --- 🔥 CRITICAL FIX: ใช้รูปจริงในการ Calibrate ---
         def representative_data_gen():
             # หา path ของรูปภาพจริง
             train_dir = os.path.join(data_dir, "pills_dataset_resnet", "train")

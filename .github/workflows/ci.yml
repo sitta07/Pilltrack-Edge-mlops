@@ -112,13 +112,18 @@ jobs:
               python src/validate.py
               
               # --- PHASE 3: DEPLOYMENT ---
-              # รัน script อัปโหลดขึ้น S3 (รันเมื่อผ่าน Phase 2 เท่านั้น)
+              echo '🚀  PHASE 3: Deployment Check'
               echo '========================================='
-              echo '🚀  PHASE 3: Deploying to S3'
-              echo '========================================='
-              python src/deploy.py
               
-              echo '🎉🎉 MISSION COMPLETE! Pipeline Finished Successfully. 🎉🎉'
+              if [ \"\$GITHUB_REF_NAME\" == \"main\" ]; then
+                  echo \"✅ Current branch is 'main'. Proceeding to Deploy...\"
+                  python src/deploy.py
+              else
+                  echo \"⚠️ Current branch is '\$GITHUB_REF_NAME'.\"
+                  echo \"🛑 Skipping Deployment to S3 (Artifacts validated but not pushed).\"
+              fi
+              
+              echo '🎉🎉 MISSION COMPLETE! Pipeline Finished. 🎉🎉'
             "
 
       # -----------------------------------------------------------
