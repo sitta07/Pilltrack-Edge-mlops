@@ -50,9 +50,9 @@ stages:
     deps:
     - path: data/raw
       hash: md5
-      md5: eda598d65d0b369c50dfd3c0518d129b.dir
-      size: 154042228
-      nfiles: 9790
+      md5: fe2b3cdaaa4dec0f52e84ec41525004d.dir
+      size: 156502338
+      nfiles: 19718
     - path: models/student_quant_int8.tflite
       hash: md5
       md5: e64ae75a8966ce99d96faa9f73935fd4
@@ -98,3 +98,20 @@ stages:
       hash: md5
       md5: a33e41c1dd341ba7ca1e9f18cec253cc
       size: 38
+  prepare:
+    cmd: python src/prepare.py
+    deps:
+    - path: data/pills_dataset_resnet.zip
+      hash: md5
+      md5: afc658f9360f9f008a3bda6ecf8fdf52
+      size: 147818896
+    - path: src/prepare.py
+      hash: md5
+      md5: 673ef739126a64b910df50e43c5649eb
+      size: 1117
+    outs:
+    - path: data/raw
+      hash: md5
+      md5: fe2b3cdaaa4dec0f52e84ec41525004d.dir
+      size: 156502338
+      nfiles: 19718

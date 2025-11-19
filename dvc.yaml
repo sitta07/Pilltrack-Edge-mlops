@@ -1,5 +1,12 @@
 stages:
-  # --- STAGE 1: TRAINING (สร้างสมองนักเรียน) ---
+  # 0. Prepare (แตกไฟล์)
+  prepare:
+    cmd: python src/prepare.py
+    deps:
+      - src/prepare.py
+      - data/pills_dataset_resnet.zip 
+    outs:
+      - data/raw 
   train:
     cmd: python src/training/train.py
     deps:
