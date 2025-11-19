@@ -20,13 +20,16 @@ jobs:
         with:
           fetch-depth: 0
 
+      # 1. Setup Python and DVC (Run on Host - Safer)
       - name: Setup Python and DVC
         uses: actions/setup-python@v4
         with:
           python-version: '3.10'
         run: |
-          pip install dvc[s3]
+          # 🔥 FIX: ใช้ boto3 โดยตรง ลดปัญหา pip error
+          pip install dvc boto3 
 
+      # 2. Configure AWS Credentials
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
@@ -34,11 +37,31 @@ jobs:
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ap-southeast-1
 
+      # 3. Pull Data on Host (New Strategy!) 🌟
+      - name: Check & Pull Data from DVC
+        run: |
+          echo "--- Checking Remote Data Status ---"
+          # เช็กก่อนว่าไฟล์ .zip มีบน S3 ไหม
+          dvc status data/pills_dataset_resnet.zip.dvc -c
+          
+          echo "--- Pulling Data to Host Workspace ---"
+          dvc pull
+          
+          echo "--- Verifying File ---"
+          if [ -f "data/pills_dataset_resnet.zip" ]; then
+            echo "✅ Success! Found zip file: $(ls -lh data/pills_dataset_resnet.zip)"
+          else
+            echo "❌ Error: Zip file not found after pull!"
+            exit 1
+          fi
+
+      # 4. Build Docker Image
       - name: Build Docker Image
         run: |
           docker build -t $IMAGE_NAME -f DockerFile .
           echo "✅ Docker image built"
 
+      # 5. Run MLOps Pipeline INSIDE Container
       - name: Run MLOps Pipeline
         env:
           AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
@@ -47,10 +70,12 @@ jobs:
           S3_BUCKET_NAME: ${{ secrets.S3_BUCKET_NAME }}
           AWS_DEFAULT_REGION: ap-southeast-1
         run: |
-          echo "--- Starting Production Pipeline ---"
+          echo "--- Starting Production Pipeline in Docker ---"
           
-          mkdir -p data/raw models mlruns
+          # สร้างโฟลเดอร์ Output รอไว้
+          mkdir -p models mlruns
           
+          # รัน Docker (สังเกตว่าไม่ต้อง dvc pull ข้างในแล้ว เพราะเรา mount ไฟล์ที่เสร็จแล้วเข้าไป)
           docker run --rm \
             -v ${{ github.workspace }}:/app \
             -e AWS_ACCESS_KEY_ID \
@@ -63,19 +88,11 @@ jobs:
             /bin/bash -c "
               set -e
               
-              echo '=== Pulling Data from DVC ==='
-              dvc pull
+              echo '=== Double Check Data inside Docker ==='
+              ls -lh data/pills_dataset_resnet.zip
               
-              echo '=== Validating Dataset ==='
-              if [ -f 'data/pills_dataset_resnet.zip' ]; then
-                echo '✅ Dataset verified: $(ls -lh data/pills_dataset_resnet.zip)'
-                # DVC already validates checksum, no need for unzip test
-              else
-                echo '❌ Dataset missing'
-                exit 1
-              fi
-              
-              echo '=== Running Pipeline ==='
+              echo '=== Running Pipeline (Repro) ==='
+              # dvc repro จะเห็นว่าไฟล์มาแล้ว และข้ามขั้นตอน pull ไปทำขั้นอื่นเลย
               dvc repro
               
               echo '=== Validating Output Models ==='
@@ -87,8 +104,8 @@ jobs:
                 'models/model_metadata.json'
               )
               
-              for model in \"${REQUIRED_MODELS[@]}\"; do
-                if [ -f \"$model\" ]; then
+              for model in \"\${REQUIRED_MODELS[@]}\"; do
+                if [ -f \"\$model\" ]; then
                   echo \"✅ \$model - generated\"
                 else
                   echo \"❌ \$model - missing\"
@@ -102,6 +119,7 @@ jobs:
               echo '🎉 Pipeline Successfully Completed!'
             "
 
+      # 6. Upload Artifacts
       - name: Upload Pipeline Artifacts
         if: always()
         uses: actions/upload-artifact@v4
@@ -112,13 +130,11 @@ jobs:
             mlruns/
           retention-days: 30
 
+      # 7. Notify
       - name: Notify Success
         if: success()
-        run: |
-          echo "✅ MLOps Pipeline Completed Successfully"
-          echo "📦 Models are ready for deployment"
+        run: echo "✅ MLOps Pipeline Completed Successfully"
 
       - name: Notify Failure
         if: failure()
-        run: |
-          echo "❌ Pipeline Failed - Check logs for details"
+        run: echo "❌ Pipeline Failed - Check logs"
