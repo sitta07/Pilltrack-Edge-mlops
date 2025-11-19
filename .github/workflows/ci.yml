@@ -3,12 +3,13 @@ name: MLOps Production Pipeline
 on:
   push:
     branches:
-      - main                
-      - 'feature/**'        
+      - main                # รันเมื่อ Push เข้า main (เพื่อ Deploy)
+      - 'feature/**'        # รันเมื่อ Push เข้า feature/ ทุกตัว (เพื่อ Test)
 
   pull_request:
     branches:
-      - main
+      - main                # รันเมื่อเปิด PR เข้า main
+
 jobs:
   run_mlops_pipeline:
     runs-on: ubuntu-latest
@@ -31,7 +32,9 @@ jobs:
         with:
           python-version: '3.10'
       - run: |
-          pip install "dvc[s3]"
+          # ติดตั้ง DVC และ Boto3 (S3 lib) บน Host
+          # ใช้ฟันหนูครอบ "dvc[s3]" เพื่อกัน shell error
+          pip install "dvc[s3]" boto3
 
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v4
@@ -47,6 +50,7 @@ jobs:
           dvc status data/pills_dataset_resnet.zip.dvc -c
           
           echo "--- 📥 Pulling Data to Host Workspace ---"
+          # ดึงข้อมูลลงมาก่อนเข้า Docker
           dvc pull
           
           echo "--- ✅ Verifying Downloaded Data ---"
@@ -67,11 +71,9 @@ jobs:
 
       # -----------------------------------------------------------
       # 3. EXECUTE PIPELINE INSIDE DOCKER
-      #    (Build -> Validate -> Deploy)
       # -----------------------------------------------------------
       - name: Run MLOps Pipeline (Build, Validate, Deploy)
         env:
-          # ส่ง Secrets เข้าไปใน Container
           AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           MLFLOW_TRACKING_URI: ${{ secrets.MLFLOW_TRACKING_URI }}
@@ -80,7 +82,6 @@ jobs:
         run: |
           echo "--- 🚀 Starting Production Pipeline in Docker ---"
           
-          # สร้างโฟลเดอร์ Output รอไว้ (ป้องกัน Permission Error ตอน Mount)
           mkdir -p models mlruns
           
           docker run --rm \
@@ -90,28 +91,26 @@ jobs:
             -e MLFLOW_TRACKING_URI \
             -e S3_BUCKET_NAME \
             -e AWS_DEFAULT_REGION \
+            -e GITHUB_REF_NAME=${{ github.ref_name }} \
             --user $(id -u):$(id -g) \
             $IMAGE_NAME \
             /bin/bash -c "
-              set -e # ถ้ามี Error ให้หยุดทันที
+              set -e 
               
               # --- PHASE 1: BUILD ARTIFACTS ---
-              # รัน dvc.yaml (Train -> Convert -> Enroll)
-              # จะได้ไฟล์ .tflite, .index, .json ออกมา
               echo '========================================='
               echo '🏗️  PHASE 1: Building Artifacts (DVC Repro)'
               echo '========================================='
               dvc repro
               
               # --- PHASE 2: VALIDATION ---
-              # รัน script ตรวจสอบความถูกต้อง (ไม่อยู่ใน dvc.yaml)
-              # ถ้า Accuracy ต่ำกว่าเกณฑ์ Script จะ exit 1 และ Pipeline จะหยุดตรงนี้
               echo '========================================='
               echo '🔍  PHASE 2: Validating Performance'
               echo '========================================='
               python src/validate.py
               
-              # --- PHASE 3: DEPLOYMENT ---
+              # --- PHASE 3: DEPLOYMENT (Main Only) ---
+              echo '========================================='
               echo '🚀  PHASE 3: Deployment Check'
               echo '========================================='
               
@@ -130,7 +129,7 @@ jobs:
       # 4. POST-PROCESSING (Artifacts & Logs)
       # -----------------------------------------------------------
       - name: Upload Pipeline Artifacts (Logs & Models)
-        if: always() # เก็บ Log เสมอ แม้ Pipeline จะพัง
+        if: always()
         uses: actions/upload-artifact@v4
         with:
           name: ml-artifacts-${{ github.run_id }}
