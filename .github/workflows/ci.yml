@@ -27,7 +27,7 @@ jobs:
         uses: actions/setup-python@v4
         with:
           python-version: '3.10'
-        run: |
+      - run: |
           # ติดตั้ง DVC และ Boto3 (S3 lib) บน Host เพื่อใช้ Pull Data
           pip install dvc boto3
 
