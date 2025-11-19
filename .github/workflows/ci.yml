@@ -3,8 +3,12 @@ name: MLOps Production Pipeline
 on:
   push:
     branches:
-      - main                
+      - main                 
       - 'feature/**'        
+
+  pull_request:
+    branches:
+      - main                
 
   pull_request:
     branches:
