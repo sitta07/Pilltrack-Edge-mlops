@@ -53,8 +53,11 @@ conda env update --file environment.yaml --prune
 To run the pipeline locally or in CI/CD, ensure the following environment variables are set (e.g., in .env or GitHub Secrets):
 
 export AWS_ACCESS_KEY_ID="your_key"
+
 export AWS_SECRET_ACCESS_KEY="your_secret"
+
 export AWS_REGION="ap-southeast-1"
+
 export MLFLOW_TRACKING_URI="your_mlflow_server"
 
 Development Workflow (Git Flow + DVC)
