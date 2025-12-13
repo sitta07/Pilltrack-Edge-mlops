@@ -1,72 +1,122 @@
-# pilltrack-edge-mlops
-End-to-end MLOps pipeline for real-time pill identification on Edge devices using Deep Metric Learning, Knowledge Distillation, and Vector Search.
+# PillTrack: Edge MLOps Pipeline
 
-## Create Python environment
+![Python](https://img.shields.io/badge/Python-3.9%2B-blue)
+![DVC](https://img.shields.io/badge/Data%20Ops-DVC-purple)
+![MLflow](https://img.shields.io/badge/Tracking-MLflow-blue)
+![AWS S3](https://img.shields.io/badge/Storage-AWS%20S3-orange)
+![CI/CD](https://img.shields.io/badge/CI%2FCD-GitHub%20Actions-black)
+
+## Overview
+
+**PillTrack** is an end-to-end MLOps pipeline designed for **real-time pill identification on Edge devices**.
+
+Unlike traditional classification, this system leverages **Deep Metric Learning** to generate robust vector embeddings for pills, allowing for few-shot identification of new pill types without full retraining. To ensure low-latency inference on edge hardware, we utilize **Knowledge Distillation** to compress heavy teacher models (ResNet) into lightweight student models.
+
+## MLOps Architecture
+
+The pipeline follows a reproducible **Data-centric AI** approach using DVC for data versioning and Git for code versioning.
+
+Tech Stack & Engineering Decisions
+
+Data Version Control (DVC):
+
+Decision: Decouples large datasets (.zip) from the codebase while maintaining version history aligned with Git commits. Ensures reproducibility of every experiment.
+
+Deep Metric Learning:
+
+Decision: Used instead of Softmax classification to handle the "open-set" problem (new pills appearing in the future) via Vector Search similarity.
+
+Knowledge Distillation:
+
+Decision: Compresses model size by transferring knowledge from a heavy Teacher network to a lightweight Student network, optimizing for Edge latency constraints.
+
+GitHub Actions (CI/CD):
+
+Decision: Automates the training pipeline (dvc repro) on Pull Requests to ensure model convergence before merging.
+
+
+Getting Started
+1. Environment Setup
+Manage dependencies using Conda to ensure cross-platform compatibility.
+
+## Create environment
 conda env create -f environment.yaml
+
+## Activate environment
 conda activate pilltrack-conda
 
-## update (Please uncomment setup in environment.yaml if you use macOS )
+## (Optional) Update environment if yaml changes
+## Note: Uncomment setup in yaml if using macOS Apple Silicon
 conda env update --file environment.yaml --prune
 
-## Train Model 
-dvc repro 
+2. Configuration (Secrets)
+To run the pipeline locally or in CI/CD, ensure the following environment variables are set (e.g., in .env or GitHub Secrets):
 
-## Push Command
-## Add Data
-dvc add --force data/pills_dataset_resnet.zip
-dvc add data/raw/pills_dataset_resnet/ 
+export AWS_ACCESS_KEY_ID="your_key"
 
-## Run CI.yaml
-dvc status          
-dvc push           
-git add .          
-git commit -m "Add trained models and data"
-git push          
+export AWS_SECRET_ACCESS_KEY="your_secret"
 
+export AWS_REGION="ap-southeast-1"
 
-## 2. Development Workflow (Git Flow)
-## Always create a new branch for new features or fixes. Do not push directly to main.
+export MLFLOW_TRACKING_URI="your_mlflow_server"
 
-## Step 1: Create a new branch
+Development Workflow (Git Flow + DVC)
+
+We follow a strict Feature Branch Workflow. Direct pushes to main are prohibited to maintain pipeline integrity.
+
+Step 1: Start a New Feature
+
+Always create a new branch for model experiments or bug fixes.
 
 git checkout main
 git pull origin main
+git checkout -b feature/improved-resnet-backbone
 
-# 2. สร้าง Branch ใหม่ (ตั้งชื่อให้สื่อความหมาย เช่น feature/new-model, fix/validation-bug)
-git checkout -b feature/your-feature-name
+Step 2: Reproduce Pipeline & Train
 
-## 3. Train & Reproduce Pipeline
-## Run the DVC pipeline to train, convert, and enroll (Build Artifacts):
+Run the DVC pipeline to execute stages (train, convert, enroll) defined in dvc.yaml.
 
+## Runs the pipeline locally, updates artifacts and dvc.lock
 dvc repro
-## (Note: This runs locally and updates dvc.lock, but does NOT deploy to S3)
 
-## 4. Commit & Push Changes
-## Once your experiment is successful locally:
 
-## Case A: Code or Params Changed ONLY (Normal case)
+Step 3: Commit & Push Changes
+Case A: Code or Hyperparameters Changed ONLY
 
+If you only modified .py files or params.yaml:
 ## 1. Check status (Ensure dvc.lock is modified)
 dvc status
 
-## 2. Push large files to S3 (if any changes in dvc tracked files)
+## 2. Push tracked artifacts to S3
 dvc push
 
-## 3. Git Commit & Push
+## 3. Git Commit & Push Code
 git add .
-git commit -m "feat: Describe what you changed"
-git push -u origin feature/your-feature-name
+git commit -m "feat: optimize distillation temperature"
+git push -u origin feature/improved-resnet-backbone
 
 
-## Case B: Dataset/Raw Data Changed (Only if you updated the .zip file)
+Case B: Dataset Changed
+
+If you updated the raw dataset (e.g., data/pills_dataset_resnet.zip):
+## 1. Update DVC tracking
 dvc add --force data/pills_dataset_resnet.zip
+
+## 2. Push data to Remote Storage
 dvc push
+
+## 3. Commit the pointer file (.dvc) to Git
 git add data/pills_dataset_resnet.zip.dvc .gitignore
-git commit -m "chore: Update dataset version"
+git commit -m "chore: update dataset v2 with new pill types"
+git push
 
+CI/CD Pipeline
 
-## need to set up in action variable first
-AWS_ACCESS_KEY_ID
-MLFLOW_TRACKING_URI
-AWS_SECRET_ACCESS_KEY
-AWS_ACCESS_KEY_ID
+On every git push, the CI pipeline executes:
+
+DVC Pull: Fetches data from AWS S3.
+
+Reproduction: Runs dvc repro to validate the training pipeline.
+
+Reporting: Pushes metrics to MLflow and comments results on the PR.
+
