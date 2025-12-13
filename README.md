@@ -39,14 +39,14 @@ Getting Started
 1. Environment Setup
 Manage dependencies using Conda to ensure cross-platform compatibility.
 
-# Create environment
+## Create environment
 conda env create -f environment.yaml
 
-# Activate environment
+## Activate environment
 conda activate pilltrack-conda
 
-# (Optional) Update environment if yaml changes
-# Note: Uncomment setup in yaml if using macOS Apple Silicon
+## (Optional) Update environment if yaml changes
+## Note: Uncomment setup in yaml if using macOS Apple Silicon
 conda env update --file environment.yaml --prune
 
 2. Configuration (Secrets)
@@ -73,7 +73,7 @@ Step 2: Reproduce Pipeline & Train
 
 Run the DVC pipeline to execute stages (train, convert, enroll) defined in dvc.yaml.
 
-# Runs the pipeline locally, updates artifacts and dvc.lock
+## Runs the pipeline locally, updates artifacts and dvc.lock
 dvc repro
 
 
@@ -81,13 +81,13 @@ Step 3: Commit & Push Changes
 Case A: Code or Hyperparameters Changed ONLY
 
 If you only modified .py files or params.yaml:
-# 1. Check status (Ensure dvc.lock is modified)
+## 1. Check status (Ensure dvc.lock is modified)
 dvc status
 
-# 2. Push tracked artifacts to S3
+## 2. Push tracked artifacts to S3
 dvc push
 
-# 3. Git Commit & Push Code
+## 3. Git Commit & Push Code
 git add .
 git commit -m "feat: optimize distillation temperature"
 git push -u origin feature/improved-resnet-backbone
@@ -96,13 +96,13 @@ git push -u origin feature/improved-resnet-backbone
 Case B: Dataset Changed
 
 If you updated the raw dataset (e.g., data/pills_dataset_resnet.zip):
-# 1. Update DVC tracking
+## 1. Update DVC tracking
 dvc add --force data/pills_dataset_resnet.zip
 
-# 2. Push data to Remote Storage
+## 2. Push data to Remote Storage
 dvc push
 
-# 3. Commit the pointer file (.dvc) to Git
+## 3. Commit the pointer file (.dvc) to Git
 git add data/pills_dataset_resnet.zip.dvc .gitignore
 git commit -m "chore: update dataset v2 with new pill types"
 git push
