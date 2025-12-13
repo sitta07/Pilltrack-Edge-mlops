@@ -16,16 +16,6 @@ Unlike traditional classification, this system leverages **Deep Metric Learning*
 
 The pipeline follows a reproducible **Data-centric AI** approach using DVC for data versioning and Git for code versioning.
 
-```mermaid
-graph LR
-    A["Raw Data"] -->|"DVC Tracking"| B{"AWS S3 Storage"}
-    B -->|"Pull"| C["Training Pipeline"]
-    C -->|"ResNet50"| D["Teacher Model"]
-    D -->|"Knowledge Distillation"| E["Student Model"]
-    E -->|"Eval & Metrics"| F(("MLflow"))
-    E -->|"Onnx/TFLite"| G["Edge Deployment"]
-
-
 Tech Stack & Engineering Decisions
 
 Data Version Control (DVC):
