@@ -18,12 +18,12 @@ The pipeline follows a reproducible **Data-centric AI** approach using DVC for d
 
 ```mermaid
 graph LR
-    A[Raw Data] -->|DVC Tracking| B{AWS S3 Storage}
-    B -->|Pull| C[Training Pipeline]
-    C -->|ResNet50| D[Teacher Model]
-    D -->|Knowledge Distillation| E[Student Model]
-    E -->|Eval & Metrics| F((MLflow))
-    E -->|Onnx/TFLite| G[Edge Deployment]
+    A["Raw Data"] -->|"DVC Tracking"| B{"AWS S3 Storage"}
+    B -->|"Pull"| C["Training Pipeline"]
+    C -->|"ResNet50"| D["Teacher Model"]
+    D -->|"Knowledge Distillation"| E["Student Model"]
+    E -->|"Eval & Metrics"| F(("MLflow"))
+    E -->|"Onnx/TFLite"| G["Edge Deployment"]
 
 
 Tech Stack & Engineering Decisions
