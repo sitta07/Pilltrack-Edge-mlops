@@ -40,7 +40,10 @@ Getting Started
 Manage dependencies using Conda to ensure cross-platform compatibility.
 
 ## Create environment
+```bash
 conda env create -f environment.yaml
+```
+
 
 ## Activate environment
 conda activate pilltrack-conda
