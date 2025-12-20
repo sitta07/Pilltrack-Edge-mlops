@@ -46,15 +46,20 @@ conda env create -f environment.yaml
 
 
 ## Activate environment
+```bash
 conda activate pilltrack-conda
+```
 
 ## (Optional) Update environment if yaml changes
 ## Note: Uncomment setup in yaml if using macOS Apple Silicon
+```bash
 conda env update --file environment.yaml --prune
+```
 
 2. Configuration (Secrets)
 To run the pipeline locally or in CI/CD, ensure the following environment variables are set (e.g., in .env or GitHub Secrets):
 
+```bash
 export AWS_ACCESS_KEY_ID="your_key"
 
 export AWS_SECRET_ACCESS_KEY="your_secret"
@@ -62,6 +67,7 @@ export AWS_SECRET_ACCESS_KEY="your_secret"
 export AWS_REGION="ap-southeast-1"
 
 export MLFLOW_TRACKING_URI="your_mlflow_server"
+```
 
 Development Workflow (Git Flow + DVC)
 
@@ -71,47 +77,61 @@ Step 1: Start a New Feature
 
 Always create a new branch for model experiments or bug fixes.
 
+```bash
 git checkout main
 git pull origin main
 git checkout -b feature/improved-resnet-backbone
+```
 
 Step 2: Reproduce Pipeline & Train
 
 Run the DVC pipeline to execute stages (train, convert, enroll) defined in dvc.yaml.
 
 ## Runs the pipeline locally, updates artifacts and dvc.lock
+```bash
 dvc repro
-
+```
 
 Step 3: Commit & Push Changes
 Case A: Code or Hyperparameters Changed ONLY
 
 If you only modified .py files or params.yaml:
 ## 1. Check status (Ensure dvc.lock is modified)
+```bash
 dvc status
+```
 
 ## 2. Push tracked artifacts to S3
+```bash
 dvc push
+```
 
 ## 3. Git Commit & Push Code
+```bash
 git add .
 git commit -m "feat: optimize distillation temperature"
 git push -u origin feature/improved-resnet-backbone
-
+```
 
 Case B: Dataset Changed
 
 If you updated the raw dataset (e.g., data/pills_dataset_resnet.zip):
 ## 1. Update DVC tracking
+```bash
 dvc add --force data/pills_dataset_resnet.zip
+```
 
 ## 2. Push data to Remote Storage
+```bash
 dvc push
+```
 
 ## 3. Commit the pointer file (.dvc) to Git
+```bash
 git add data/pills_dataset_resnet.zip.dvc .gitignore
 git commit -m "chore: update dataset v2 with new pill types"
 git push
+```
 
 CI/CD Pipeline
 
