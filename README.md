@@ -143,3 +143,11 @@ Reproduction: Runs dvc repro to validate the training pipeline.
 
 Reporting: Pushes metrics to MLflow and comments results on the PR.
 
+
+👨‍💻 Author
+sitta07
+
+
+AI Engineer Intern @ AI SmartTech
+
+© 2025 AI SmartTech. All Rights Reserved.
