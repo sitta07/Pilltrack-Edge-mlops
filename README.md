@@ -12,48 +12,43 @@
 
 Unlike traditional classification, this system leverages **Deep Metric Learning** to generate robust vector embeddings for pills, allowing for few-shot identification of new pill types without full retraining. To ensure low-latency inference on edge hardware, we utilize **Knowledge Distillation** to compress heavy teacher models (ResNet) into lightweight student models.
 
-```
 graph LR
     subgraph Development_and_DataOps ["📦 1. Development & DataOps"]
-        Dev[("💻 Developer<br/>(Git Flow)")]
+        Dev["💻 Developer<br/>(Git Flow)"]
         GitHub["🐙 GitHub Actions<br/>(CI/CD)"]
-        DVC["📊 DVC<br/>(Data Versioning)"]
-        S3[("☁️ AWS S3<br/>(Remote Storage)")]
+        DVC["📂 DVC<br/>(Data Versioning)"]
+        S3["☁️ AWS S3<br/>(Remote Storage)"]
     end
 
     subgraph Training_Pipeline ["🧠 2. Knowledge Distillation & Training"]
         direction TB
-        Teacher["🎓 Teacher Model<br/>(ResNet)"]
-        Student["👶 Student Model<br/>(Lightweight)"]
-        MLflow["📈 MLflow<br/>(Experiment Tracking)"]
-        Metric["📏 Metric Learning<br/>(Vector Embeddings)"]
+        Teacher["🎓 Teacher (ResNet)"]
+        Student["👶 Student (Lightweight)"]
+        MLflow["📈 MLflow (Tracking)"]
+        Metric["📏 Metric Learning"]
+        
+        Teacher -->|Distill| Student
+        Student -->|Log| MLflow
+        Metric -->|Embed| Student
     end
 
     subgraph Edge_Deployment ["📱 3. Edge Inference"]
-        Edge["📟 Edge Device<br/>(Smartphone/IoT)"]
-        VectorDB[("🔍 Vector Search<br/>(Few-shot ID)")]
+        Edge["📟 Edge Device"]
+        VectorDB[("🔍 Vector Search")]
     end
 
     %% Interactions
+    GitHub -->|Trigger dvc repro| Teacher
     Dev -->|Push Code| GitHub
     Dev -->|Push Data| DVC
-    DVC -.->|Store Blobs| S3
-    GitHub -->|Trigger dvc repro| Teacher
-    
-    Teacher -->|Knowledge Transfer| Student
-    Student -->|Log Metrics| MLflow
-    Metric -->|Generate Embeddings| Student
-    
-    Student -->|Deploy Artifacts| Edge
-    Edge <-->|Similarity Search| VectorDB
+    DVC -.->|Store| S3
+    Student -->|Deploy| Edge
+    Edge <-->|Search| VectorDB
 
     %% Styling
-    style Development_and_DataOps fill:#f9f9f9,stroke:#333,stroke-width:2px
-    style Training_Pipeline fill:#e1f5fe,stroke:#01579b,stroke-width:2px
-    style Edge_Deployment fill:#fff3e0,stroke:#e65100,stroke-width:2px
-    style Teacher fill:#bbdefb
-    style Student fill:#c8e6c9
-```
+    style Development_and_DataOps fill:#f9f9f9,stroke:#333
+    style Training_Pipeline fill:#e1f5fe,stroke:#01579b
+    style Edge_Deployment fill:#fff3e0,stroke:#e65100
 
 ## MLOps Architecture
 
