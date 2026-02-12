@@ -12,6 +12,7 @@
 
 Unlike traditional classification, this system leverages **Deep Metric Learning** to generate robust vector embeddings for pills, allowing for few-shot identification of new pill types without full retraining. To ensure low-latency inference on edge hardware, we utilize **Knowledge Distillation** to compress heavy teacher models (ResNet) into lightweight student models.
 
+```mermaid
 graph LR
     subgraph Development_and_DataOps ["📦 1. Development & DataOps"]
         Dev["💻 Developer<br/>(Git Flow)"]
@@ -49,7 +50,7 @@ graph LR
     style Development_and_DataOps fill:#f9f9f9,stroke:#333
     style Training_Pipeline fill:#e1f5fe,stroke:#01579b
     style Edge_Deployment fill:#fff3e0,stroke:#e65100
-
+```
 ## MLOps Architecture
 
 The pipeline follows a reproducible **Data-centric AI** approach using DVC for data versioning and Git for code versioning.
