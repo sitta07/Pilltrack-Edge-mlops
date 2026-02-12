@@ -14,28 +14,28 @@ Unlike traditional classification, this system leverages **Deep Metric Learning*
 
 ```mermaid
 graph LR
-    subgraph Development_and_DataOps ["📦 1. Development & DataOps"]
-        Dev["💻 Developer<br/>(Git Flow)"]
-        GitHub["🐙 GitHub Actions<br/>(CI/CD)"]
-        DVC["📂 DVC<br/>(Data Versioning)"]
-        S3["☁️ AWS S3<br/>(Remote Storage)"]
+    subgraph Development_and_DataOps ["1. Development & DataOps"]
+        Dev["Developer<br/>(Git Flow)"]
+        GitHub["GitHub Actions<br/>(CI/CD)"]
+        DVC["DVC<br/>(Data Versioning)"]
+        S3["AWS S3<br/>(Remote Storage)"]
     end
 
-    subgraph Training_Pipeline ["🧠 2. Knowledge Distillation & Training"]
+    subgraph Training_Pipeline ["2. Knowledge Distillation & Training"]
         direction TB
-        Teacher["🎓 Teacher (ResNet)"]
-        Student["👶 Student (Lightweight)"]
-        MLflow["📈 MLflow (Tracking)"]
-        Metric["📏 Metric Learning"]
+        Teacher["Teacher (ResNet)"]
+        Student["Student (Lightweight)"]
+        MLflow["MLflow (Tracking)"]
+        Metric["Metric Learning"]
         
         Teacher -->|Distill| Student
         Student -->|Log| MLflow
         Metric -->|Embed| Student
     end
 
-    subgraph Edge_Deployment ["📱 3. Edge Inference"]
-        Edge["📟 Edge Device"]
-        VectorDB[("🔍 Vector Search")]
+    subgraph Edge_Deployment ["3. Edge Inference"]
+        Edge["Edge Device"]
+        VectorDB[("Vector Search")]
     end
 
     %% Interactions
