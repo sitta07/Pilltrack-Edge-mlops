@@ -12,7 +12,8 @@
 
 Unlike traditional classification, this system leverages **Deep Metric Learning** to generate robust vector embeddings for pills, allowing for few-shot identification of new pill types without full retraining. To ensure low-latency inference on edge hardware, we utilize **Knowledge Distillation** to compress heavy teacher models (ResNet) into lightweight student models.
 
-```graph LR
+```
+graph LR
     subgraph Development_and_DataOps ["📦 1. Development & DataOps"]
         Dev[("💻 Developer<br/>(Git Flow)")]
         GitHub["🐙 GitHub Actions<br/>(CI/CD)"]
